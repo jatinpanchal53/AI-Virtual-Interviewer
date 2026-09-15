@@ -1,0 +1,78 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String      @id @default(uuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  createdAt    DateTime    @default(now())
+  interviews   Interview[]
+}
+
+model Interview {
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role            String
+  experienceLevel String           // Beginner, Intermediate, Advanced
+  interviewType   String           // Technical, HR, Mixed, Project Defense
+  totalQuestions  Int              @default(5)
+  repoUrl         String?
+  repoName        String?
+  repoContext     String?          // JSON stringified repository summary and tech stack
+  status          String           @default("pending") // pending, in_progress, completed
+  overallScore    Float?
+  createdAt       DateTime         @default(now())
+  completedAt     DateTime?
+  questions       Question[]
+  report          InterviewReport?
+}
+
+model Question {
+  id             String   @id @default(uuid())
+  interviewId    String
+  interview      Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  questionText   String
+  category       String   // Coding, System Design, Behavioral, Conceptual, Problem Solving
+  difficulty     String   // Easy, Medium, Hard
+  questionOrder  Int
+  expectedTopics String   // JSON stringified array of topics
+  answer         Answer?
+}
+
+model Answer {
+  id                  String   @id @default(uuid())
+  questionId          String   @unique
+  question            Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answerText          String
+  technicalScore      Float
+  communicationScore  Float
+  relevanceScore      Float
+  problemSolvingScore Float
+  overallScore        Float
+  feedback            String
+  strengths           String   // JSON stringified array
+  weaknesses          String   // JSON stringified array
+  missingConcepts     String?  // JSON stringified array
+  createdAt           DateTime @default(now())
+}
+
+model InterviewReport {
+  id                String    @id @default(uuid())
+  interviewId       String    @unique
+  interview         Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  summary           String
+  strengths         String    // JSON stringified array
+  weaknesses        String    // JSON stringified array
+  skillGaps         String    // JSON stringified array of { skill, gap, severity }
+  recommendedTopics String    // JSON stringified array
+  improvementPlan   String    // JSON stringified array of steps
+  createdAt         DateTime  @default(now())
+}
